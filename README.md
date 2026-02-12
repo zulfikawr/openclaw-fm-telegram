@@ -1,5 +1,7 @@
 # openclaw-fm-telegram
 
+![file manager screenshot](./assets/screenshot.jpg)
+
 a telegram-based file manager for openclaw using inline buttons and local file navigation.
 
 ## 🚀 features
