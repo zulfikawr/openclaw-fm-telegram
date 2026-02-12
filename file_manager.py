@@ -11,7 +11,7 @@ def load_state():
     if os.path.exists(state_file):
         with open(state_file) as f:
             return json.load(f)
-    return {"current_path": workspace, "path_history": [workspace]}
+    return {"current_path": workspace, "path_history": [workspace], "last_message_id": None}
 
 def save_state(state):
     with open(state_file, 'w') as f:
@@ -63,15 +63,21 @@ def send_listing(state):
     if len(state['path_history']) > 1:
         buttons.append([{"text": "⬅️ Back", "callback_data": "back"}])
     
-    # Directories
+    # All directories
     for d in dirs:
         buttons.append([{"text": f"📁 {d}", "callback_data": f"enter:{d}"}])
         
-    # Files
+    # All files
     for f in files:
         buttons.append([{"text": f"📄 {f}", "callback_data": f"view:{f}"}])
 
-    print("SEND_MESSAGE:", msg)
+    # Print for the agent to handle
+    if state.get("last_message_id"):
+        print("EDIT_MESSAGE:", state["last_message_id"])
+    else:
+        print("SEND_MESSAGE_NEW")
+        
+    print("CONTENT:", msg)
     print("INLINE_KEYBOARD:", buttons)
 
 def handle_callback(callback_data, state):
@@ -99,9 +105,14 @@ def handle_callback(callback_data, state):
         send_listing(state)
 
 def handle_fm():
-    state = {"current_path": workspace, "path_history": [workspace]}
+    state = {"current_path": workspace, "path_history": [workspace], "last_message_id": None}
     save_state(state)
     send_listing(state)
+
+def update_message_id(message_id):
+    state = load_state()
+    state["last_message_id"] = message_id
+    save_state(state)
 
 if __name__ == "__main__":
     if len(sys.argv) == 2 and sys.argv[1] == "fm":
@@ -109,5 +120,7 @@ if __name__ == "__main__":
     elif len(sys.argv) == 3 and sys.argv[1] == "callback":
         state = load_state()
         handle_callback(sys.argv[2], state)
+    elif len(sys.argv) == 3 and sys.argv[1] == "set_id":
+        update_message_id(sys.argv[2])
     else:
-        print("Usage: python3 file_manager.py fm | callback <data>")
+        print("Usage: python3 file_manager.py fm | callback <data> | set_id <id>")
